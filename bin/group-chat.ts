@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { GroupChatStack } from '../lib/group-chat-stack';
+import { GroupStacks } from '../lib/group-stack';
+import { UserStack } from '../lib/user-stack';
+import { MessageStack } from '../lib/message-stack';
 
 const app = new cdk.App();
-new GroupChatStack(app, 'GroupChatStack', {
+const groupChatStack = new GroupChatStack(app, 'GroupChatStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -18,3 +21,16 @@ new GroupChatStack(app, 'GroupChatStack', {
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
+
+new GroupStacks(app, 'GroupStacks', {
+  groupChatTable: groupChatStack.groupChatTable,
+  groupChatGraphqlApi: groupChatStack.groupChatGraphqlApi
+})
+new UserStack(app, 'UserStacks', {
+  groupChatTable: groupChatStack.groupChatTable,
+  groupChatGraphqlApi: groupChatStack.groupChatGraphqlApi
+})
+new MessageStack(app, 'MessageStack', {
+  groupChatTable: groupChatStack.groupChatTable,
+  groupChatGraphqlApi: groupChatStack.groupChatGraphqlApi
+})
