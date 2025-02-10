@@ -1,0 +1,32 @@
+name: Group Chat
+
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Login to AWS
+
+    - name: Set up Node
+      uses: actions/setup-node@v3
+      with:
+          node-version: "20"
+    - name: Install the CDK Dependency
+      run: |
+        npm install -g aws-cdk
+    - name: Install other dependencies
+      run: |
+        npm install
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Deploy repoStackName to AWS
+      run: cdk deploy repoStackName --require-approval=never
