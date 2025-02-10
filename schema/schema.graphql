@@ -1,0 +1,146 @@
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+type Subscription {
+  typingIndicator: TypingIndicator
+    @aws_subscribe(mutations: ["typingIndicator"]) @aws_cognito_user_pools
+
+  newMessage: Message @aws_subscribe(mutations: ["sendMessage"]) @aws_cognito_user_pools
+
+  addUserToGroup(groupId: String!): Boolean
+    @aws_subscribe(mutations: ["addUserToGroup"]) @aws_cognito_user_pools
+}
+
+type Mutation {
+  createUserAccount(input: UserInput!): User! @aws_cognito_user_pools
+  updateUserAccount(input: UpdateUserInput!): User! @aws_cognito_user_pools
+
+  createGroup(input: GroupInput!): Group! @aws_cognito_user_pools
+  addUserToGroup(userId: String!, groupId: String!): Boolean!
+    @aws_cognito_user_pools
+  sendMessage(input: MessageInput!): Message! @aws_cognito_user_pools
+
+  typingIndicator(
+    userId: String!
+    groupId: String!
+    typing: Boolean!
+  ): TypingIndicator! @aws_cognito_user_pools
+}
+
+type TypingIndicator @aws_cognito_user_pools {
+  userId: String!
+  groupId: String!
+  typing: Boolean!
+}
+type Query {
+  getAllGroupsCreatedByUser(
+    userId: String!
+    limit: Int
+    nextToken: String
+  ): GroupResult! @aws_cognito_user_pools
+  getAllUsersPerGroup(
+    groupId: String!
+    limit: Int
+    nextToken: String
+  ): GroupUserResult! @aws_cognito_user_pools
+  getAllMessagesPerGroup(
+    groupId: String!
+    limit: Int
+    nextToken: String
+  ): MessageResult! @aws_cognito_user_pools
+  getGroupsUserBelongsTo(
+    userId: String!
+    limit: Int
+    nextToken: String
+  ): UserGroupResult! @aws_cognito_user_pools
+  getUserAccount(userId: String!): User! @aws_cognito_user_pools
+  getAllUserAccounts(limit: Int, nextToken: String): UserResult!
+    @aws_cognito_user_pools
+}
+
+type User @aws_cognito_user_pools {
+  id: ID!
+  username: String!
+  email: String!
+  profilePicKey: String!
+  updatedOn: String
+  createdOn: String
+}
+
+input UserInput @aws_cognito_user_pools {
+  username: String!
+  email: String!
+  profilePicKey: String!
+}
+
+input UpdateUserInput @aws_cognito_user_pools {
+  id: ID!
+  username: String!
+  profilePicKey: String!
+}
+
+type Message @aws_cognito_user_pools {
+  id: ID!
+  userId: String!
+  user: User
+  groupId: String!
+  messageText: String!
+  createdOn: AWSTimestamp!
+}
+
+type MessageResult @aws_cognito_user_pools {
+  items: [Message!]!
+  nextToken: String
+}
+input MessageInput @aws_cognito_user_pools {
+  userId: String!
+  groupId: String!
+  messageText: String!
+}
+
+type UserGroup @aws_cognito_user_pools {
+  userId: String!
+  groups: [Group!]!
+  createdOn: String!
+}
+
+type Group @aws_cognito_user_pools {
+  id: ID!
+  userId: String!
+  name: String!
+  groupProfilePicKey: String!
+  description: String!
+  createdOn: String!
+}
+
+input GroupInput {
+  userId: String!
+  name: String!
+  groupProfilePicKey: String!
+  description: String!
+}
+
+type GroupResult @aws_cognito_user_pools {
+  items: [Group!]! @aws_cognito_user_pools
+  nextToken: String
+}
+type GroupUser @aws_cognito_user_pools {
+  groupId: String!
+  user: [User!]!
+  createdOn: String!
+}
+type GroupUserResult @aws_cognito_user_pools {
+  items: [GroupUser!]! @aws_cognito_user_pools
+  nextToken: String
+}
+type UserGroupResult @aws_cognito_user_pools {
+  items: [UserGroup!]! @aws_cognito_user_pools
+  nextToken: String
+}
+type UserResult @aws_cognito_user_pools {
+  items: [User!]! @aws_cognito_user_pools
+  nextToken: String
+}
