@@ -29,7 +29,7 @@ export class GroupStacks extends Stack {
         api: groupChatGraphqlApi,
         dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/group/createGroupResolver.js")
+          path.join(__dirname, "../resolvers/group/createGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
