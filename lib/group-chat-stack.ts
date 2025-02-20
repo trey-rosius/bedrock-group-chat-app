@@ -2,11 +2,8 @@ import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as appsync from "aws-cdk-lib/aws-appsync";
-// import { UserPool, UserPoolClient } from "aws-cdk-lib/aws-cognito";
-
 import {
   CfnDataSource,
-  CfnGraphQLApi,
   CfnGraphQLSchema,
 } from "aws-cdk-lib/aws-appsync";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -18,7 +15,6 @@ import {
   Table,
 } from "aws-cdk-lib/aws-dynamodb";
 import { readFileSync } from "fs";
-// import { ManagedPolicy, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 
 export class GroupChatStack extends Stack {
   public readonly groupChatTable: Table;
@@ -83,7 +79,6 @@ export class GroupChatStack extends Stack {
       )
     );
 
-
     /**
      * GraphQL API
      */
@@ -118,45 +113,6 @@ export class GroupChatStack extends Stack {
       apiId: this.groupChatGraphqlApi.apiId,
       definition: readFileSync("./schema/schema.graphql").toString(),
     });
-
-    // /**
-    //  * GraphQL API
-    //  */
-    // this.groupChatGraphqlApi = new CfnGraphQLApi(this, "groupChatGraphqlApi", {
-    //   name: "groupChat",
-    //   authenticationType: "API_KEY",
-
-    //   additionalAuthenticationProviders: [
-    //     {
-    //       authenticationType: "AMAZON_COGNITO_USER_POOLS",
-
-    //       userPoolConfig: {
-    //         userPoolId: userPool.userPoolId,
-    //         awsRegion: "us-east-1",
-    //       },
-    //     },
-    //   ],
-    //   userPoolConfig: {
-    //     userPoolId: userPool.userPoolId,
-    //     defaultAction: "ALLOW",
-    //     awsRegion: "us-east-1",
-    //   },
-
-    //   logConfig: {
-    //     fieldLogLevel: "ALL",
-    //     cloudWatchLogsRoleArn: cloudWatchRole.roleArn,
-    //   },
-    //   xrayEnabled: true,
-    // });
-
-    // /**
-    //  * Graphql Schema
-    //  */
-
-    // this.apiSchema = new CfnGraphQLSchema(this, "GroupChatGraphqlApiSchema", {
-    //   apiId: this.groupChatGraphqlApi.attrApiId,
-    //   definition: readFileSync("./schema/schema.graphql").toString(),
-    // });
 
     /**
      * Database
@@ -216,7 +172,6 @@ export class GroupChatStack extends Stack {
         name: "GSI2SK",
         type: AttributeType.STRING,
       },
-
       projectionType: ProjectionType.ALL,
     });
 
@@ -230,7 +185,6 @@ export class GroupChatStack extends Stack {
         name: "GSI3SK",
         type: AttributeType.STRING,
       },
-
       projectionType: ProjectionType.ALL,
     });
 
@@ -247,7 +201,6 @@ export class GroupChatStack extends Stack {
         name: "GSI3PK",
         type: AttributeType.STRING,
       },
-
       projectionType: ProjectionType.ALL,
     });
 
@@ -256,7 +209,7 @@ export class GroupChatStack extends Stack {
       "groupChatDynamoDBTableDataSource",
       {
         apiId: this.groupChatGraphqlApi.apiId,
-        name: "AcmsDynamoDBTableDataSource",
+        name: "GroupChatDynamoDBTableDataSource",
         type: "AMAZON_DYNAMODB",
         dynamoDbConfig: {
           tableName: this.groupChatTable.tableName,

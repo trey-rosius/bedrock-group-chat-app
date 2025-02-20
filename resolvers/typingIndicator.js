@@ -5,11 +5,13 @@ export function request(ctx) {
   const id = util.autoId();
   const item = {
     id: id,
-    ENTITY: "GROUP",
-    GSI1PK: `USER#${input.userId}`,
-    GSI1SK: `GROUP#${id}`,
-    ...input,
-    createdOn: util.time.nowISO8601(),
+    ENTITY: "TYPING",
+    PK: `USER#${userId}`,
+    SK: `GROUP#${groupId}#TYPING`,
+    userId: userId,
+    groupId: groupId,
+    typing: typing,
+    createdOn: createdOn,
   };
   const key = {
     PK: `GROUP#${id}`,

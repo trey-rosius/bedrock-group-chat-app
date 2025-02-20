@@ -1,16 +1,11 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import * as appsync from "aws-cdk-lib/aws-appsync";
-import * as signer from "aws-cdk-lib/aws-signer";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
-import { ManagedPolicy, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import * as path from "path";
 interface GroupStackProps extends StackProps {
   groupChatGraphqlApi: appsync.GraphqlApi;
-  //   apiSchema: appsync.CfnGraphQLSchema;
   groupChatTable: Table;
-  //   groupChatDatasource: appsync.DynamoDbDataSource;
 }
 
 export class GroupStacks extends Stack {
@@ -20,8 +15,6 @@ export class GroupStacks extends Stack {
     const {
       groupChatTable,
       groupChatGraphqlApi,
-      //   apiSchema,
-      //   groupChatDatasource,
     } = props;
 
     const createGroupFunction = new appsync.AppsyncFunction(
@@ -220,42 +213,5 @@ export class GroupStacks extends Stack {
       ),
       runtime: appsync.FunctionRuntime.JS_1_0_0,
     });
-    //   const getAllApartmentsPerBuilding = new appsync.AppsyncFunction(
-    //     this,
-    //     "getAllApartmentsPerBuilding",
-    //     {
-    //       name: "getAllApartmentsPerBuilding",
-    //       api: airbnbGraphqlApi,
-    //       dataSource: airbnbGraphqlApi.addDynamoDbDataSource(
-    //         "getAllApartmentsPerBuilding",
-    //         airbnbDatabase,
-    //       ),
-    //       code: bundleAppSyncResolver(
-    //         "src/resolvers/apartment/getAllApartmentsPerBuilding.ts",
-    //       ),
-    //       runtime: appsync.FunctionRuntime.JS_1_0_0,
-    //     },
-    //   );
-
-    //   new appsync.Resolver(this, "getAllApartmentsPerBuildingResolver", {
-    //     api: airbnbGraphqlApi,
-    //     typeName: "Query",
-    //     fieldName: "getAllApartmentsPerBuilding",
-    //     code: appsync.Code.fromAsset(
-    //       join(__dirname, "./js_resolvers/_before_and_after_mapping_template.js"),
-    //     ),
-    //     runtime: appsync.FunctionRuntime.JS_1_0_0,
-    //     pipelineConfig: [getAllApartmentsPerBuilding],
-    //   });
   }
 }
-
-// createGroupResolver.addDependsOn(apiSchema);
-// getResultUsersPerGroupResolver.addDependsOn(apiSchema);
-// addUserToGroupResolver.addDependsOn(apiSchema);
-// getGroupsCreatedByUserResolver.addDependsOn(apiSchema);
-// getGroupsUserBelongsToResolver.addDependsOn(apiSchema);
-// getGroupResolver.addDependsOn(getGroupsUserBelongsToResolver);
-// groupChatTable.grantFullAccess(createGroupLambda);
-// groupChatTable.grantFullAccess(addUserToGroupLambda);
-// createGroupLambda.addEnvironment("GroupChat_DB", groupChatTable.tableName);
