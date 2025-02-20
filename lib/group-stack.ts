@@ -29,7 +29,7 @@ export class GroupStacks extends Stack {
         api: groupChatGraphqlApi,
         dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/createGroupResolver.js")
+          path.join(__dirname, "../resolvers/group/createGroupResolver.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -51,7 +51,7 @@ export class GroupStacks extends Stack {
       api: groupChatGraphqlApi,
       dataSource: groupDataSource,
       code: appsync.Code.fromAsset(
-        path.join(__dirname, "../resolvers/addUserToGroup.js")
+        path.join(__dirname, "../resolvers/group/addUserToGroup.js")
       ),
       runtime: appsync.FunctionRuntime.JS_1_0_0,
     });
@@ -75,7 +75,7 @@ export class GroupStacks extends Stack {
         api: groupChatGraphqlApi,
         dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getAllUsersPerGroup.js")
+          path.join(__dirname, "../resolvers/group/getAllUsersPerGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -100,7 +100,7 @@ export class GroupStacks extends Stack {
         api: groupChatGraphqlApi,
         dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getAllGroupsCreatedByUser.js")
+          path.join(__dirname, "../resolvers/group/getAllGroupsCreatedByUser.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -125,7 +125,7 @@ export class GroupStacks extends Stack {
         api: groupChatGraphqlApi,
         dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getAllMessagesPerGroup.js")
+          path.join(__dirname, "../resolvers/group/getAllMessagesPerGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -150,7 +150,7 @@ export class GroupStacks extends Stack {
         api: groupChatGraphqlApi,
         dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getGroupsUserBelongsTo.js")
+          path.join(__dirname, "../resolvers/group/getGroupsUserBelongsTo.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -173,7 +173,7 @@ export class GroupStacks extends Stack {
         typeName: "Message",
         fieldName: "user",
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getMessageUser.js")
+          path.join(__dirname, "../resolvers/group/getMessageUser.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       });
@@ -184,7 +184,7 @@ export class GroupStacks extends Stack {
       typeName: "UserGroup",
       fieldName: "groups",
       code: appsync.Code.fromAsset(
-        path.join(__dirname, "../resolvers/getUserGroup.js")
+        path.join(__dirname, "../resolvers/group/getUserGroup.js")
       ),
       runtime: appsync.FunctionRuntime.JS_1_0_0,
     });
@@ -195,7 +195,7 @@ export class GroupStacks extends Stack {
       typeName: "GroupUser",
       fieldName: "user",
       code: appsync.Code.fromAsset(
-        path.join(__dirname, "../resolvers/getGroupUser.js")
+        path.join(__dirname, "../resolvers/group/getGroupUser.js")
       ),
       runtime: appsync.FunctionRuntime.JS_1_0_0,
     });
