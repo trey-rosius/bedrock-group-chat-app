@@ -30,7 +30,7 @@ export class UserStack extends Stack {
           name: "createUserAccount",
           api: groupChatGraphqlApi,
           dataSource: userDataSource,
-          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/createUserAccount.js")),
+          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/user/createUserAccount.js")),
           runtime: appsync.FunctionRuntime.JS_1_0_0,
         },
       );
@@ -50,7 +50,7 @@ export class UserStack extends Stack {
           name: "getUserAccount",
           api: groupChatGraphqlApi,
           dataSource: userDataSource,
-          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/getUserAccount.js")),
+          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/user/getUserAccount.js")),
           runtime: appsync.FunctionRuntime.JS_1_0_0,
         });
   
@@ -69,7 +69,7 @@ export class UserStack extends Stack {
         name: "getAllUserAccounts",
         api: groupChatGraphqlApi,
         dataSource: userDataSource,
-        code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/getAllUserAccounts.js")),
+        code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/user/getAllUserAccounts.js")),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       });
 

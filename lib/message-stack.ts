@@ -24,7 +24,7 @@ export class MessageStack extends Stack {
             "sendMessage",
             groupChatTable,
           ),
-          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/sendMessage.js")),
+          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/message/sendMessage.js")),
           runtime: appsync.FunctionRuntime.JS_1_0_0,
         },
       );

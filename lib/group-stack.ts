@@ -17,16 +17,17 @@ export class GroupStacks extends Stack {
       groupChatGraphqlApi,
     } = props;
 
+    const groupDataSource = groupChatGraphqlApi.addDynamoDbDataSource(
+      "GroupDataSource",
+      groupChatTable
+    );
     const createGroupFunction = new appsync.AppsyncFunction(
       this,
       "createGroupFunction",
       {
         name: "createGroupFunction",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "createGroupFunction",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
           path.join(__dirname, "../resolvers/createGroupResolver.js")
         ),
@@ -48,10 +49,7 @@ export class GroupStacks extends Stack {
     const addUserToGroup = new appsync.AppsyncFunction(this, "addUserToGroup", {
       name: "addUserToGroup",
       api: groupChatGraphqlApi,
-      dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-        "addUserToGroup",
-        groupChatTable
-      ),
+      dataSource: groupDataSource,
       code: appsync.Code.fromAsset(
         path.join(__dirname, "../resolvers/addUserToGroup.js")
       ),
@@ -75,10 +73,7 @@ export class GroupStacks extends Stack {
       {
         name: "getAllUsersPerGroup",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllUsersPerGroup",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
           path.join(__dirname, "../resolvers/getAllUsersPerGroup.js")
         ),
@@ -103,10 +98,7 @@ export class GroupStacks extends Stack {
       {
         name: "getAllGroupsCreatedByUser",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllGroupsCreatedByUser",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
           path.join(__dirname, "../resolvers/getAllGroupsCreatedByUser.js")
         ),
@@ -131,10 +123,7 @@ export class GroupStacks extends Stack {
       {
         name: "getAllMessagesPerGroup",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllMessagesPerGroup",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
           path.join(__dirname, "../resolvers/getAllMessagesPerGroup.js")
         ),
@@ -159,10 +148,7 @@ export class GroupStacks extends Stack {
       {
         name: "getGroupsUserBelongsTo",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getGroupsUserBelongsTo",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
           path.join(__dirname, "../resolvers/getGroupsUserBelongsTo.js")
         ),
