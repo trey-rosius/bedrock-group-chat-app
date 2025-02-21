@@ -1,7 +1,6 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import * as appsync from "aws-cdk-lib/aws-appsync";
 import * as iam from "aws-cdk-lib/aws-iam";
-
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import * as path from "path";
@@ -16,18 +15,19 @@ export class GroupStacks extends Stack {
 
     const { groupChatTable, groupChatGraphqlApi } = props;
 
+    const groupDataSource = groupChatGraphqlApi.addDynamoDbDataSource(
+      "GroupDataSource",
+      groupChatTable
+    );
     const createGroupFunction = new appsync.AppsyncFunction(
       this,
       "createGroupFunction",
       {
         name: "createGroupFunction",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "createGroupFunction",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/createGroupResolver.js")
+          path.join(__dirname, "../resolvers/group/createGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -75,12 +75,9 @@ export class GroupStacks extends Stack {
     const addUserToGroup = new appsync.AppsyncFunction(this, "addUserToGroup", {
       name: "addUserToGroup",
       api: groupChatGraphqlApi,
-      dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-        "addUserToGroup",
-        groupChatTable
-      ),
+      dataSource: groupDataSource,
       code: appsync.Code.fromAsset(
-        path.join(__dirname, "../resolvers/addUserToGroup.js")
+        path.join(__dirname, "../resolvers/group/addUserToGroup.js")
       ),
       runtime: appsync.FunctionRuntime.JS_1_0_0,
     });
@@ -102,12 +99,9 @@ export class GroupStacks extends Stack {
       {
         name: "getAllUsersPerGroup",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllUsersPerGroup",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getAllUsersPerGroup.js")
+          path.join(__dirname, "../resolvers/group/getAllUsersPerGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -130,12 +124,12 @@ export class GroupStacks extends Stack {
       {
         name: "getAllGroupsCreatedByUser",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllGroupsCreatedByUser",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getAllGroupsCreatedByUser.js")
+          path.join(
+            __dirname,
+            "../resolvers/group/getAllGroupsCreatedByUser.js"
+          )
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -158,12 +152,9 @@ export class GroupStacks extends Stack {
       {
         name: "getAllMessagesPerGroup",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllMessagesPerGroup",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getAllMessagesPerGroup.js")
+          path.join(__dirname, "../resolvers/group/getAllMessagesPerGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -186,12 +177,9 @@ export class GroupStacks extends Stack {
       {
         name: "getGroupsUserBelongsTo",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getGroupsUserBelongsTo",
-          groupChatTable
-        ),
+        dataSource: groupDataSource,
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getGroupsUserBelongsTo.js")
+          path.join(__dirname, "../resolvers/group/getGroupsUserBelongsTo.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
@@ -214,7 +202,7 @@ export class GroupStacks extends Stack {
         typeName: "Message",
         fieldName: "user",
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getMessageUser.js")
+          path.join(__dirname, "../resolvers/group/getMessageUser.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       });
@@ -225,7 +213,7 @@ export class GroupStacks extends Stack {
         typeName: "UserGroup",
         fieldName: "groups",
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getUserGroup.js")
+          path.join(__dirname, "../resolvers/group/getUserGroup.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       });
@@ -236,46 +224,9 @@ export class GroupStacks extends Stack {
         typeName: "GroupUser",
         fieldName: "user",
         code: appsync.Code.fromAsset(
-          path.join(__dirname, "../resolvers/getGroupUser.js")
+          path.join(__dirname, "../resolvers/group/getGroupUser.js")
         ),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       });
-    //   const getAllApartmentsPerBuilding = new appsync.AppsyncFunction(
-    //     this,
-    //     "getAllApartmentsPerBuilding",
-    //     {
-    //       name: "getAllApartmentsPerBuilding",
-    //       api: airbnbGraphqlApi,
-    //       dataSource: airbnbGraphqlApi.addDynamoDbDataSource(
-    //         "getAllApartmentsPerBuilding",
-    //         airbnbDatabase,
-    //       ),
-    //       code: bundleAppSyncResolver(
-    //         "src/resolvers/apartment/getAllApartmentsPerBuilding.ts",
-    //       ),
-    //       runtime: appsync.FunctionRuntime.JS_1_0_0,
-    //     },
-    //   );
-
-    //   new appsync.Resolver(this, "getAllApartmentsPerBuildingResolver", {
-    //     api: airbnbGraphqlApi,
-    //     typeName: "Query",
-    //     fieldName: "getAllApartmentsPerBuilding",
-    //     code: appsync.Code.fromAsset(
-    //       join(__dirname, "./js_resolvers/_before_and_after_mapping_template.js"),
-    //     ),
-    //     runtime: appsync.FunctionRuntime.JS_1_0_0,
-    //     pipelineConfig: [getAllApartmentsPerBuilding],
-    //   });
   }
 }
-
-// createGroupResolver.addDependsOn(apiSchema);
-// getResultUsersPerGroupResolver.addDependsOn(apiSchema);
-// addUserToGroupResolver.addDependsOn(apiSchema);
-// getGroupsCreatedByUserResolver.addDependsOn(apiSchema);
-// getGroupsUserBelongsToResolver.addDependsOn(apiSchema);
-// getGroupResolver.addDependsOn(getGroupsUserBelongsToResolver);
-// groupChatTable.grantFullAccess(createGroupLambda);
-// groupChatTable.grantFullAccess(addUserToGroupLambda);
-// createGroupLambda.addEnvironment("GroupChat_DB", groupChatTable.tableName);

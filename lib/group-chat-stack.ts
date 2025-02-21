@@ -2,8 +2,6 @@ import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as appsync from "aws-cdk-lib/aws-appsync";
-// import { UserPool, UserPoolClient } from "aws-cdk-lib/aws-cognito";
-
 import {
   CfnDataSource,
   CfnGraphQLSchema,
@@ -20,6 +18,7 @@ import {
   Table,
 } from "aws-cdk-lib/aws-dynamodb";
 import { readFileSync } from "fs";
+
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 export class GroupChatStack extends Stack {
@@ -133,12 +132,16 @@ export class GroupChatStack extends Stack {
 
     this.apiSchema = new appsync.CfnGraphQLSchema(
       this,
-      "airbnbGraphqlApiSchema",
+      "groupChatGraphqlApiSchema",
       {
         apiId: this.groupChatGraphqlApi.apiId,
         definition: readFileSync("./schema/schema.graphql").toString(),
       }
     );
+
+    /**
+     * Database
+     */
 
     this.groupChatTable = new Table(this, "groupChatDynamoDbTable", {
       tableName: "groupChatDynamoDBTable",
@@ -194,7 +197,6 @@ export class GroupChatStack extends Stack {
         name: "GSI2SK",
         type: AttributeType.STRING,
       },
-
       projectionType: ProjectionType.ALL,
     });
 
@@ -208,7 +210,6 @@ export class GroupChatStack extends Stack {
         name: "GSI3SK",
         type: AttributeType.STRING,
       },
-
       projectionType: ProjectionType.ALL,
     });
 
@@ -225,7 +226,6 @@ export class GroupChatStack extends Stack {
         name: "GSI3PK",
         type: AttributeType.STRING,
       },
-
       projectionType: ProjectionType.ALL,
     });
 
@@ -293,7 +293,7 @@ export class GroupChatStack extends Stack {
       "groupChatDynamoDBTableDataSource",
       {
         apiId: this.groupChatGraphqlApi.apiId,
-        name: "DynamoDBTableDataSource",
+        name: "GroupChatDynamoDBTableDataSource",
         type: "AMAZON_DYNAMODB",
         dynamoDbConfig: {
           tableName: this.groupChatTable.tableName,

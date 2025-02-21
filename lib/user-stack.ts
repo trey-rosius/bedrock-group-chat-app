@@ -17,17 +17,20 @@ export class UserStack extends Stack {
       groupChatTable,
       groupChatGraphqlApi
     } = props;
+    // Define a single DynamoDB data source
+    const userDataSource = groupChatGraphqlApi.addDynamoDbDataSource(
+      "UserDataSource",
+      groupChatTable
+    );
+
     const createUserAccount = new appsync.AppsyncFunction(
         this,
         "createUserAccount",
         {
           name: "createUserAccount",
           api: groupChatGraphqlApi,
-          dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-            "createUserAccount",
-            groupChatTable,
-          ),
-          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/createUserAccount.js")),
+          dataSource: userDataSource,
+          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/user/createUserAccount.js")),
           runtime: appsync.FunctionRuntime.JS_1_0_0,
         },
       );
@@ -46,11 +49,8 @@ export class UserStack extends Stack {
       const getUserAccount = new appsync.AppsyncFunction(this, "getUserAccount", {
           name: "getUserAccount",
           api: groupChatGraphqlApi,
-          dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-            "getUserAccount",
-            groupChatTable,
-          ),
-          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/getUserAccount.js")),
+          dataSource: userDataSource,
+          code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/user/getUserAccount.js")),
           runtime: appsync.FunctionRuntime.JS_1_0_0,
         });
   
@@ -68,11 +68,8 @@ export class UserStack extends Stack {
       const getAllUserAccounts = new appsync.AppsyncFunction(this, "getAllUserAccounts", {
         name: "getAllUserAccounts",
         api: groupChatGraphqlApi,
-        dataSource: groupChatGraphqlApi.addDynamoDbDataSource(
-          "getAllUserAccounts",
-          groupChatTable,
-        ),
-        code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/getAllUserAccounts.js")),
+        dataSource: userDataSource,
+        code: appsync.Code.fromAsset(path.join(__dirname, "../resolvers/user/getAllUserAccounts.js")),
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       });
 
