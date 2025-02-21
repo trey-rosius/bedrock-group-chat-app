@@ -6,12 +6,16 @@ schema {
 
 type Subscription {
   typingIndicator: TypingIndicator
-    @aws_subscribe(mutations: ["typingIndicator"]) @aws_cognito_user_pools
+    @aws_subscribe(mutations: ["typingIndicator"])
+    @aws_cognito_user_pools
 
-  newMessage: Message @aws_subscribe(mutations: ["sendMessage"]) @aws_cognito_user_pools
+  newMessage: Message
+    @aws_subscribe(mutations: ["sendMessage"])
+    @aws_cognito_user_pools
 
   addUserToGroup(groupId: String!): Boolean
-    @aws_subscribe(mutations: ["addUserToGroup"]) @aws_cognito_user_pools
+    @aws_subscribe(mutations: ["addUserToGroup"])
+    @aws_cognito_user_pools
 }
 
 type Mutation {
@@ -36,6 +40,7 @@ type TypingIndicator @aws_cognito_user_pools {
   typing: Boolean!
 }
 type Query {
+  detectProfanity(text: String): String @aws_api_key
   getAllGroupsCreatedByUser(
     userId: String!
     limit: Int

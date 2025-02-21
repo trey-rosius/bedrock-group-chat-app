@@ -6,9 +6,11 @@ import * as appsync from "aws-cdk-lib/aws-appsync";
 
 import {
   CfnDataSource,
-  CfnGraphQLApi,
   CfnGraphQLSchema,
+  CfnResolver,
 } from "aws-cdk-lib/aws-appsync";
+
+import {} from "aws-cdk-lib/aws-bedrock";
 import * as iam from "aws-cdk-lib/aws-iam";
 import {
   AttributeType,
@@ -18,12 +20,15 @@ import {
   Table,
 } from "aws-cdk-lib/aws-dynamodb";
 import { readFileSync } from "fs";
-// import { ManagedPolicy, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 export class GroupChatStack extends Stack {
   public readonly groupChatTable: Table;
   public readonly groupChatGraphqlApi: appsync.GraphqlApi;
+
   public readonly apiSchema: CfnGraphQLSchema;
+  public readonly bedrock_datasource: CfnDataSource;
+
   public readonly groupChatTableDatasource: CfnDataSource;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -59,6 +64,19 @@ export class GroupChatStack extends Stack {
     dynamoDBRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess")
     );
+    const bedrockRole = new iam.Role(this, "BedRockRole", {
+      assumedBy: new iam.ServicePrincipal("appsync.amazonaws.com"),
+    });
+
+    bedrockRole.addToPrincipalPolicy(
+      new PolicyStatement({
+        resources: [
+          "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0",
+          "arn:aws:bedrock:us-east-1:132260253285:guardrail/645e94gltocd",
+        ],
+        actions: ["bedrock:InvokeModel", "bedrock:ApplyGuardrail"],
+      })
+    );
 
     const userPoolClient: cognito.UserPoolClient = new cognito.UserPoolClient(
       this,
@@ -83,12 +101,11 @@ export class GroupChatStack extends Stack {
       )
     );
 
-
     /**
      * GraphQL API
      */
     this.groupChatGraphqlApi = new appsync.GraphqlApi(this, "Api", {
-      name: "groupChat",
+      name: "profanity-check-groupChat",
       definition: appsync.Definition.fromFile("schema/schema.graphql"),
       authorizationConfig: {
         defaultAuthorization: {
@@ -114,53 +131,14 @@ export class GroupChatStack extends Stack {
      * Graphql Schema
      */
 
-    this.apiSchema = new appsync.CfnGraphQLSchema(this, "airbnbGraphqlApiSchema", {
-      apiId: this.groupChatGraphqlApi.apiId,
-      definition: readFileSync("./schema/schema.graphql").toString(),
-    });
-
-    // /**
-    //  * GraphQL API
-    //  */
-    // this.groupChatGraphqlApi = new CfnGraphQLApi(this, "groupChatGraphqlApi", {
-    //   name: "groupChat",
-    //   authenticationType: "API_KEY",
-
-    //   additionalAuthenticationProviders: [
-    //     {
-    //       authenticationType: "AMAZON_COGNITO_USER_POOLS",
-
-    //       userPoolConfig: {
-    //         userPoolId: userPool.userPoolId,
-    //         awsRegion: "us-east-1",
-    //       },
-    //     },
-    //   ],
-    //   userPoolConfig: {
-    //     userPoolId: userPool.userPoolId,
-    //     defaultAction: "ALLOW",
-    //     awsRegion: "us-east-1",
-    //   },
-
-    //   logConfig: {
-    //     fieldLogLevel: "ALL",
-    //     cloudWatchLogsRoleArn: cloudWatchRole.roleArn,
-    //   },
-    //   xrayEnabled: true,
-    // });
-
-    // /**
-    //  * Graphql Schema
-    //  */
-
-    // this.apiSchema = new CfnGraphQLSchema(this, "GroupChatGraphqlApiSchema", {
-    //   apiId: this.groupChatGraphqlApi.attrApiId,
-    //   definition: readFileSync("./schema/schema.graphql").toString(),
-    // });
-
-    /**
-     * Database
-     */
+    this.apiSchema = new appsync.CfnGraphQLSchema(
+      this,
+      "airbnbGraphqlApiSchema",
+      {
+        apiId: this.groupChatGraphqlApi.apiId,
+        definition: readFileSync("./schema/schema.graphql").toString(),
+      }
+    );
 
     this.groupChatTable = new Table(this, "groupChatDynamoDbTable", {
       tableName: "groupChatDynamoDBTable",
@@ -251,12 +229,71 @@ export class GroupChatStack extends Stack {
       projectionType: ProjectionType.ALL,
     });
 
+    this.bedrock_datasource = new CfnDataSource(this, "bedrock-datasource", {
+      apiId: this.groupChatGraphqlApi.apiId,
+      name: "BedrockDataSource",
+      type: "AMAZON_BEDROCK_RUNTIME",
+      serviceRoleArn: bedrockRole.roleArn,
+    });
+    new CfnResolver(this, "bedrock-resolver", {
+      apiId: this.groupChatGraphqlApi.apiId,
+      typeName: "Query",
+      fieldName: "detectProfanity",
+      dataSourceName: this.bedrock_datasource.name,
+      code: `
+    import { invokeModel } from "@aws-appsync/utils/ai";
+    export function request(ctx) {
+      console.log("we're in here");
+
+      return invokeModel({
+        modelId: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        guardrailIdentifier: "645e94gltocd",
+        guardrailVersion: "1",
+  
+        body: {
+          messages: [
+            {
+              role: "user",
+              content: "Fuck y'all niggas"
+              
+            }
+             
+          ],
+          max_tokens: 100,
+          temperature: 0.5,
+          "anthropic_version": "bedrock-2023-05-31",
+        },
+      });
+    }
+
+     export function response(ctx) {
+      console.log(\`bedrock response: \${JSON.stringify(ctx.result)}\`);
+
+      // Extract the response content from the Claude model
+      if (ctx.result && ctx.result.content && Array.isArray(ctx.result.content)) {
+        const responseText = ctx.result.content
+          .map((item) => item.text) // Extract the 'text' field from each content item
+          .join(" "); // Combine multiple content items into a single string
+        return responseText;
+      }
+
+      // Fallback response if the structure is unexpected
+      return "No valid response from the model.";
+    }
+  `,
+
+      runtime: {
+        name: "APPSYNC_JS",
+        runtimeVersion: "1.0.0",
+      },
+    });
+
     this.groupChatTableDatasource = new CfnDataSource(
       this,
       "groupChatDynamoDBTableDataSource",
       {
         apiId: this.groupChatGraphqlApi.apiId,
-        name: "AcmsDynamoDBTableDataSource",
+        name: "DynamoDBTableDataSource",
         type: "AMAZON_DYNAMODB",
         dynamoDbConfig: {
           tableName: this.groupChatTable.tableName,

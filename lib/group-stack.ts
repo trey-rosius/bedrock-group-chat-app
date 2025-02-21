@@ -1,28 +1,20 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import * as appsync from "aws-cdk-lib/aws-appsync";
-import * as signer from "aws-cdk-lib/aws-signer";
+import * as iam from "aws-cdk-lib/aws-iam";
+
 import { Table } from "aws-cdk-lib/aws-dynamodb";
-import { ManagedPolicy, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import * as path from "path";
 interface GroupStackProps extends StackProps {
   groupChatGraphqlApi: appsync.GraphqlApi;
-  //   apiSchema: appsync.CfnGraphQLSchema;
   groupChatTable: Table;
-  //   groupChatDatasource: appsync.DynamoDbDataSource;
 }
 
 export class GroupStacks extends Stack {
   constructor(scope: Construct, id: string, props: GroupStackProps) {
     super(scope, id, props);
 
-    const {
-      groupChatTable,
-      groupChatGraphqlApi,
-      //   apiSchema,
-      //   groupChatDatasource,
-    } = props;
+    const { groupChatTable, groupChatGraphqlApi } = props;
 
     const createGroupFunction = new appsync.AppsyncFunction(
       this,
@@ -40,7 +32,35 @@ export class GroupStacks extends Stack {
         runtime: appsync.FunctionRuntime.JS_1_0_0,
       }
     );
+    const bedrockDataSource = groupChatGraphqlApi.addHttpDataSource(
+      "bedrockDS",
+      "https://bedrock-runtime.us-east-1.amazonaws.com",
+      {
+        authorizationConfig: {
+          signingRegion: "us-east-1",
+          signingServiceName: "bedrock",
+        },
+      }
+    );
 
+    bedrockDataSource.grantPrincipal.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        resources: [
+          "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0",
+        ],
+        actions: ["bedrock:InvokeModel"],
+      })
+    );
+    /*
+    groupChatGraphqlApi.createResolver("detectProfanityResolver", {
+      //dataSource:bedrockDataSource,
+      dataSource: groupChatGraphqlApi.add,
+      typeName: "Query",
+      fieldName: "detectProfanity",
+      code: appsync.Code.fromAsset("./resolvers/detectProfanity.js"),
+      runtime: appsync.FunctionRuntime.JS_1_0_0,
+    });
+    */
     new appsync.Resolver(this, "createGroupResolver", {
       api: groupChatGraphqlApi,
       typeName: "Mutation",
@@ -200,26 +220,26 @@ export class GroupStacks extends Stack {
       });
 
     groupChatGraphqlApi
-    .addDynamoDbDataSource("getUserGroup", groupChatTable)
-    .createResolver("userGroupResolver", {
-      typeName: "UserGroup",
-      fieldName: "groups",
-      code: appsync.Code.fromAsset(
-        path.join(__dirname, "../resolvers/getUserGroup.js")
-      ),
-      runtime: appsync.FunctionRuntime.JS_1_0_0,
-    });
+      .addDynamoDbDataSource("getUserGroup", groupChatTable)
+      .createResolver("userGroupResolver", {
+        typeName: "UserGroup",
+        fieldName: "groups",
+        code: appsync.Code.fromAsset(
+          path.join(__dirname, "../resolvers/getUserGroup.js")
+        ),
+        runtime: appsync.FunctionRuntime.JS_1_0_0,
+      });
 
     groupChatGraphqlApi
-    .addDynamoDbDataSource("getGroupUser", groupChatTable)
-    .createResolver("groupUserResolver", {
-      typeName: "GroupUser",
-      fieldName: "user",
-      code: appsync.Code.fromAsset(
-        path.join(__dirname, "../resolvers/getGroupUser.js")
-      ),
-      runtime: appsync.FunctionRuntime.JS_1_0_0,
-    });
+      .addDynamoDbDataSource("getGroupUser", groupChatTable)
+      .createResolver("groupUserResolver", {
+        typeName: "GroupUser",
+        fieldName: "user",
+        code: appsync.Code.fromAsset(
+          path.join(__dirname, "../resolvers/getGroupUser.js")
+        ),
+        runtime: appsync.FunctionRuntime.JS_1_0_0,
+      });
     //   const getAllApartmentsPerBuilding = new appsync.AppsyncFunction(
     //     this,
     //     "getAllApartmentsPerBuilding",
