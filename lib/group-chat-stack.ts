@@ -2,11 +2,7 @@ import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as appsync from "aws-cdk-lib/aws-appsync";
-import {
-  CfnDataSource,
-  CfnGraphQLSchema,
-  CfnResolver,
-} from "aws-cdk-lib/aws-appsync";
+import { CfnDataSource, CfnGraphQLSchema } from "aws-cdk-lib/aws-appsync";
 
 import {} from "aws-cdk-lib/aws-bedrock";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -17,14 +13,19 @@ import {
   StreamViewType,
   Table,
 } from "aws-cdk-lib/aws-dynamodb";
-import { readFileSync } from "fs";
 
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { bedrock } from "@cdklabs/generative-ai-cdk-constructs";
+import {
+  ContentFilterStrength,
+  ContentFilterType,
+  GuardrailAction,
+} from "@cdklabs/generative-ai-cdk-constructs/lib/cdk-lib/bedrock";
 
 export class GroupChatStack extends Stack {
   public readonly groupChatTable: Table;
   public readonly groupChatGraphqlApi: appsync.GraphqlApi;
-
+  public readonly profanity_guardrail: bedrock.Guardrail;
   public readonly apiSchema: CfnGraphQLSchema;
   public readonly bedrock_datasource: CfnDataSource;
 
@@ -67,16 +68,68 @@ export class GroupChatStack extends Stack {
       assumedBy: new iam.ServicePrincipal("appsync.amazonaws.com"),
     });
 
+    this.profanity_guardrail = new bedrock.Guardrail(
+      this,
+      "profanity-guardrail",
+      {
+        name: "ProfanityGuardrail",
+        description:
+          "Guardrail to moderate group chat messages for harmful content.",
+
+        deniedTopics: [
+          {
+            name: "Hate Speech",
+            definition:
+              "Content that promotes hate or discrimination based on race, gender, religion, or other protected attributes.",
+          },
+          {
+            name: "Violence",
+            definition:
+              "Content that includes explicit threats of violence or harm to others.",
+          },
+          {
+            name: "Self-Harm",
+            definition:
+              "Content that encourages or glorifies self-harm or suicide.",
+          },
+          {
+            name: "Illegal Activities",
+            definition:
+              "Content that promotes or encourages illegal activities.",
+          },
+        ],
+
+        contentFilters: [
+          {
+            type: ContentFilterType.SEXUAL,
+            inputStrength: ContentFilterStrength.HIGH,
+            outputStrength: ContentFilterStrength.NONE,
+          },
+          {
+            type: ContentFilterType.PROMPT_ATTACK,
+            inputStrength: ContentFilterStrength.HIGH,
+            outputStrength: ContentFilterStrength.NONE,
+          },
+          {
+            type: ContentFilterType.HATE,
+            inputStrength: ContentFilterStrength.HIGH,
+            outputStrength: ContentFilterStrength.NONE,
+          },
+        ],
+      }
+    );
+    this.profanity_guardrail.createVersion("profanity guardrail version 1");
+
     bedrockRole.addToPrincipalPolicy(
       new PolicyStatement({
         resources: [
           "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0",
-          "arn:aws:bedrock:us-east-1:132260253285:guardrail/645e94gltocd",
+
+          this.profanity_guardrail.guardrailArn,
         ],
         actions: ["bedrock:InvokeModel", "bedrock:ApplyGuardrail"],
       })
     );
-
     const userPoolClient: cognito.UserPoolClient = new cognito.UserPoolClient(
       this,
       "GroupChatUserPoolClient",
@@ -126,25 +179,20 @@ export class GroupChatStack extends Stack {
       },
     });
 
-    /**
-     * Graphql Schema
-     */
-
-    this.apiSchema = new appsync.CfnGraphQLSchema(
-      this,
-      "groupChatGraphqlApiSchema",
-      {
-        apiId: this.groupChatGraphqlApi.apiId,
-        definition: readFileSync("./schema/schema.graphql").toString(),
-      }
+    this.groupChatGraphqlApi.addEnvironmentVariable(
+      "GUARDRAIL_ID",
+      this.profanity_guardrail.guardrailId
     );
-
+    this.groupChatGraphqlApi.addEnvironmentVariable(
+      "GUARDRAIL_VERSION",
+      this.profanity_guardrail.guardrailVersion
+    );
     /**
      * Database
      */
 
-    this.groupChatTable = new Table(this, "groupChatDynamoDbTable", {
-      tableName: "groupChatDynamoDBTable",
+    this.groupChatTable = new Table(this, "groupChatDDbTable", {
+      tableName: "groupChatDDBTable",
 
       partitionKey: {
         name: "PK",
@@ -235,51 +283,75 @@ export class GroupChatStack extends Stack {
       type: "AMAZON_BEDROCK_RUNTIME",
       serviceRoleArn: bedrockRole.roleArn,
     });
+
+    /*
     new CfnResolver(this, "bedrock-resolver", {
       apiId: this.groupChatGraphqlApi.apiId,
       typeName: "Query",
       fieldName: "detectProfanity",
       dataSourceName: this.bedrock_datasource.name,
       code: `
-    import { invokeModel } from "@aws-appsync/utils/ai";
-    export function request(ctx) {
-      console.log("we're in here");
+      import { invokeModel } from "@aws-appsync/utils/ai";
 
-      return invokeModel({
-        modelId: "anthropic.claude-3-5-sonnet-20240620-v1:0",
-        guardrailIdentifier: "645e94gltocd",
-        guardrailVersion: "1",
-  
-        body: {
-          messages: [
-            {
-              role: "user",
-              content: "Fuck y'all niggas"
-              
-            }
-             
-          ],
-          max_tokens: 100,
-          temperature: 0.5,
-          "anthropic_version": "bedrock-2023-05-31",
+export function request(ctx) {
+  const input = ctx.args.input;
+
+  // Add the moderation instructions as a system prompt
+  const moderationPrompt = \`
+    Instructions:
+    You are a moderation bot tasked with identifying and preventing the spread of harmful, aggressive, racist, or toxic messages in a live stream chat. Analyze the context and intent of the message, not just specific words. Respond only with y for safe messages or n for harmful messages. Do not provide any explanation.
+    Consider these guidelines when evaluating:
+    1. Hate speech or discrimination
+    2. Explicit threats of violence
+    3. Severe profanity
+    4. Bullying or harassment
+    5. Spam or excessive self-promotion
+    6. Selling or advertising products
+    7. Sharing personal information
+    8. Encouraging self-harm or illegal activities
+    If a message is ambiguous, err on the side of caution and allow it.
+    Your entire response MUST be either y or n, nothing else.
+
+    Message to evaluate: "\${input.messageText}"
+  \`;
+
+  return invokeModel({
+    modelId: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    guardrailIdentifier: "645e94gltocd",
+    guardrailVersion: "1",
+    body: {
+      messages: [
+        {
+          role: "user",
+          content: moderationPrompt, // Pass the moderation prompt to the model
         },
-      });
+      ],
+      max_tokens: 100,
+      temperature: 0.5,
+      anthropic_version: "bedrock-2023-05-31",
+    },
+  });
+}
+
+export function response(ctx) {
+  console.log(\`bedrock response: \${JSON.stringify(ctx.result)}\`);
+
+  // Extract the response content from the Claude model
+  if (ctx.result && ctx.result.content && Array.isArray(ctx.result.content)) {
+    const responseText = ctx.result.content
+      .map((item) => item.text) // Extract the 'text' field from each content item
+      .join(" "); // Combine multiple content items into a single string
+
+    // Ensure the response is either 'y' or 'n'
+    if (responseText.trim() === "y" || responseText.trim() === "n") {
+      return responseText.trim(); // Return 'y' or 'n'
     }
+  }
 
-     export function response(ctx) {
-      console.log(\`bedrock response: \${JSON.stringify(ctx.result)}\`);
-
-      // Extract the response content from the Claude model
-      if (ctx.result && ctx.result.content && Array.isArray(ctx.result.content)) {
-        const responseText = ctx.result.content
-          .map((item) => item.text) // Extract the 'text' field from each content item
-          .join(" "); // Combine multiple content items into a single string
-        return responseText;
-      }
-
-      // Fallback response if the structure is unexpected
-      return "No valid response from the model.";
-    }
+  // Fallback response if the structure is unexpected
+  return "n"; // Default to 'n' (harmful) if the response is invalid
+}
+    
   `,
 
       runtime: {
@@ -287,6 +359,7 @@ export class GroupChatStack extends Stack {
         runtimeVersion: "1.0.0",
       },
     });
+    */
 
     this.groupChatTableDatasource = new CfnDataSource(
       this,

@@ -40,7 +40,7 @@ type TypingIndicator @aws_cognito_user_pools {
   typing: Boolean!
 }
 type Query {
-  detectProfanity(text: String): String @aws_api_key
+  detectProfanity(input: MessageInput!): String @aws_api_key
   getAllGroupsCreatedByUser(
     userId: String!
     limit: Int

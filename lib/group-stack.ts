@@ -4,6 +4,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import * as path from "path";
+import { CfnResolver } from "aws-cdk-lib/aws-appsync";
 interface GroupStackProps extends StackProps {
   groupChatGraphqlApi: appsync.GraphqlApi;
   groupChatTable: Table;
@@ -51,16 +52,7 @@ export class GroupStacks extends Stack {
         actions: ["bedrock:InvokeModel"],
       })
     );
-    /*
-    groupChatGraphqlApi.createResolver("detectProfanityResolver", {
-      //dataSource:bedrockDataSource,
-      dataSource: groupChatGraphqlApi.add,
-      typeName: "Query",
-      fieldName: "detectProfanity",
-      code: appsync.Code.fromAsset("./resolvers/detectProfanity.js"),
-      runtime: appsync.FunctionRuntime.JS_1_0_0,
-    });
-    */
+
     new appsync.Resolver(this, "createGroupResolver", {
       api: groupChatGraphqlApi,
       typeName: "Mutation",

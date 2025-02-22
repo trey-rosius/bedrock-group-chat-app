@@ -30,4 +30,5 @@ new UserStack(app, "UserStacks", {
 new MessageStack(app, "MessageStack", {
   groupChatTable: groupChatStack.groupChatTable,
   groupChatGraphqlApi: groupChatStack.groupChatGraphqlApi,
+  bedrock_datasource: groupChatStack.bedrock_datasource,
 });
