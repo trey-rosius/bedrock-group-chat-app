@@ -19,7 +19,6 @@ import { bedrock } from "@cdklabs/generative-ai-cdk-constructs";
 import {
   ContentFilterStrength,
   ContentFilterType,
-  GuardrailAction,
 } from "@cdklabs/generative-ai-cdk-constructs/lib/cdk-lib/bedrock";
 
 export class GroupChatStack extends Stack {
@@ -283,83 +282,6 @@ export class GroupChatStack extends Stack {
       type: "AMAZON_BEDROCK_RUNTIME",
       serviceRoleArn: bedrockRole.roleArn,
     });
-
-    /*
-    new CfnResolver(this, "bedrock-resolver", {
-      apiId: this.groupChatGraphqlApi.apiId,
-      typeName: "Query",
-      fieldName: "detectProfanity",
-      dataSourceName: this.bedrock_datasource.name,
-      code: `
-      import { invokeModel } from "@aws-appsync/utils/ai";
-
-export function request(ctx) {
-  const input = ctx.args.input;
-
-  // Add the moderation instructions as a system prompt
-  const moderationPrompt = \`
-    Instructions:
-    You are a moderation bot tasked with identifying and preventing the spread of harmful, aggressive, racist, or toxic messages in a live stream chat. Analyze the context and intent of the message, not just specific words. Respond only with y for safe messages or n for harmful messages. Do not provide any explanation.
-    Consider these guidelines when evaluating:
-    1. Hate speech or discrimination
-    2. Explicit threats of violence
-    3. Severe profanity
-    4. Bullying or harassment
-    5. Spam or excessive self-promotion
-    6. Selling or advertising products
-    7. Sharing personal information
-    8. Encouraging self-harm or illegal activities
-    If a message is ambiguous, err on the side of caution and allow it.
-    Your entire response MUST be either y or n, nothing else.
-
-    Message to evaluate: "\${input.messageText}"
-  \`;
-
-  return invokeModel({
-    modelId: "anthropic.claude-3-5-sonnet-20240620-v1:0",
-    guardrailIdentifier: "645e94gltocd",
-    guardrailVersion: "1",
-    body: {
-      messages: [
-        {
-          role: "user",
-          content: moderationPrompt, // Pass the moderation prompt to the model
-        },
-      ],
-      max_tokens: 100,
-      temperature: 0.5,
-      anthropic_version: "bedrock-2023-05-31",
-    },
-  });
-}
-
-export function response(ctx) {
-  console.log(\`bedrock response: \${JSON.stringify(ctx.result)}\`);
-
-  // Extract the response content from the Claude model
-  if (ctx.result && ctx.result.content && Array.isArray(ctx.result.content)) {
-    const responseText = ctx.result.content
-      .map((item) => item.text) // Extract the 'text' field from each content item
-      .join(" "); // Combine multiple content items into a single string
-
-    // Ensure the response is either 'y' or 'n'
-    if (responseText.trim() === "y" || responseText.trim() === "n") {
-      return responseText.trim(); // Return 'y' or 'n'
-    }
-  }
-
-  // Fallback response if the structure is unexpected
-  return "n"; // Default to 'n' (harmful) if the response is invalid
-}
-    
-  `,
-
-      runtime: {
-        name: "APPSYNC_JS",
-        runtimeVersion: "1.0.0",
-      },
-    });
-    */
 
     this.groupChatTableDatasource = new CfnDataSource(
       this,

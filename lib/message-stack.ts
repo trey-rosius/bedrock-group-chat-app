@@ -99,19 +99,16 @@ export function response(ctx) {
       }
     );
 
-    const getPostsByCreatorResolver: CfnResolver = new CfnResolver(
-      this,
-      "getPostsByCreatorResolver",
-      {
-        apiId: groupChatGraphqlApi.apiId,
-        typeName: "Mutation",
-        fieldName: "sendMessage",
-        kind: "PIPELINE",
-        runtime: {
-          name: "APPSYNC_JS",
-          runtimeVersion: "1.0.0",
-        },
-        code: `
+    new CfnResolver(this, "sendMessageResolver", {
+      apiId: groupChatGraphqlApi.apiId,
+      typeName: "Mutation",
+      fieldName: "sendMessage",
+      kind: "PIPELINE",
+      runtime: {
+        name: "APPSYNC_JS",
+        runtimeVersion: "1.0.0",
+      },
+      code: `
        export function request(ctx) {
   const { args } = ctx;
   console.log(args);
@@ -126,25 +123,9 @@ export function response(ctx) {
 
         `,
 
-        pipelineConfig: {
-          functions: [
-            profanity_function.attrFunctionId,
-            sendMessage.functionId,
-          ],
-        },
-      }
-    );
-    /*
-    new appsync.Resolver(this, "sendMessageResolver", {
-      api: groupChatGraphqlApi,
-      typeName: "Mutation",
-      fieldName: "sendMessage",
-      code: appsync.Code.fromAsset(
-        path.join(__dirname, "./js_resolvers/_beforeAndAfterMappingTemplate.js")
-      ),
-      runtime: appsync.FunctionRuntime.JS_1_0_0,
-      pipelineConfig: [sendMessage],
+      pipelineConfig: {
+        functions: [profanity_function.attrFunctionId, sendMessage.functionId],
+      },
     });
-    */
   }
 }
